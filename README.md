@@ -23,7 +23,7 @@ Roles are **not** selected by users during signup. A trusted Data Controller ass
 ## Requirements
 
 - A Firebase project with the Blaze plan for deployed Cloud Functions (billing may apply).
-- Node.js 20 or later.
+- Node.js 22 or later.
 - Firebase CLI: `npm install -g firebase-tools`.
 
 ## Setup
@@ -123,3 +123,23 @@ firebase emulators:start --only auth,firestore,functions
 ```
 
 The frontend is intentionally not included in this repository. Its Firebase client integration should call these callable functions rather than writing protected collections directly.
+
+## Client call example
+
+After initializing the Firebase client SDK and signing the user in, call a function using the Functions SDK in the same region:
+
+```js
+import { getFunctions, httpsCallable } from 'firebase/functions';
+
+const functions = getFunctions(app, 'asia-southeast1');
+const createPatient = httpsCallable(functions, 'createPatient');
+const result = await createPatient({
+  fullName: 'TEST PATIENT',
+  dateOfBirth: '2000-01-01',
+  barangay: 'Ampayon',
+  contactNumber: ''
+});
+console.log(result.data.patientId);
+```
+
+Use fictional test data only. Do not send patient information to analytics, logs, crash reporting, or third-party services.

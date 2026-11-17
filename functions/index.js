@@ -1,7 +1,7 @@
-import { createHmac, randomUUID } from 'node:crypto';
+import { createHmac } from 'node:crypto';
 import { initializeApp } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
-import { FieldValue, Timestamp, getFirestore } from 'firebase-admin/firestore';
+import { FieldValue, getFirestore } from 'firebase-admin/firestore';
 import { defineSecret } from 'firebase-functions/params';
 import { HttpsError, onCall } from 'firebase-functions/v2/https';
 
@@ -27,12 +27,12 @@ function requireRole(request, allowed) {
 }
 function cleanString(value, field, max = 120) {
   if (typeof value !== 'string') throw new HttpsError('invalid-argument', `${field} is required.`);
-  const result = value.trim().replace(/\\s+/g, ' ');
+  const result = value.trim().replace(/\s+/g, ' ');
   if (!result || result.length > max) throw new HttpsError('invalid-argument', `${field} must be 1-${max} characters.`);
   return result;
 }
 function validDate(value, field) {
-  if (typeof value !== 'string' || !/^\\d{4}-\\d{2}-\\d{2}$/.test(value)) {
+  if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) {
     throw new HttpsError('invalid-argument', `${field} must use YYYY-MM-DD.`);
   }
   const date = new Date(`${value}T00:00:00.000Z`);
@@ -64,7 +64,7 @@ export const createPatient = onCall(
     const barangay = cleanString(request.data?.barangay, 'Barangay', 100);
     const contactNumber = typeof request.data?.contactNumber === 'string'
       ? request.data.contactNumber.trim().slice(0, 30) : '';
-    if (contactNumber && !/^[+0-9()\\- ]{7,30}$/.test(contactNumber)) {
+    if (contactNumber && !/^[+0-9()\- ]{7,30}$/.test(contactNumber)) {
       throw new HttpsError('invalid-argument', 'Contact number format is invalid.');
     }
     const identityMaterial = `${fullName.normalize('NFKC').toLowerCase()}|${dateOfBirth}`;
@@ -171,8 +171,9 @@ export const dispenseStock = onCall({ region: REGION }, async (request) => {
   const medicineId = cleanString(request.data?.medicineId, 'Medicine ID', 80);
   const quantity = positiveInteger(request.data?.quantity, 'Quantity');
   const itemRef = db.collection('inventoryItems').doc(medicineId);
+  const today = new Date().toISOString().slice(0, 10);
   const batchesQuery = itemRef.collection('batches')
-    .where('quantityAvailable', '>', 0)
+    .where('expiryDate', '>', today)
     .orderBy('expiryDate', 'asc');
   const usedBatches = await db.runTransaction(async (tx) => {
     const itemSnap = await tx.get(itemRef);
@@ -183,7 +184,6 @@ export const dispenseStock = onCall({ region: REGION }, async (request) => {
     const batchSnap = await tx.get(batchesQuery);
     let remaining = quantity;
     const allocations = [];
-    const today = new Date().toISOString().slice(0, 10);
     for (const batch of batchSnap.docs) {
       if (remaining === 0) break;
       const data = batch.data();

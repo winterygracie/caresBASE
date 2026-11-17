@@ -4,16 +4,14 @@
       "collectionGroup": "appointments",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "appointmentDate", "order": "ASCENDING" },
-        { "fieldPath": "status", "order": "ASCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "batches",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "expiryDate", "order": "ASCENDING" },
-        { "fieldPath": "quantityAvailable", "order": "DESCENDING" }
+        {
+          "fieldPath": "appointmentDate",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "status",
+          "order": "ASCENDING"
+        }
       ]
     }
   ],
